@@ -1,0 +1,45 @@
+{
+  "entities": {
+    "Appointment": {
+      "title": "Appointment",
+      "description": "A booking request from a user",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string", "description": "Full name of the user" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "email": { "type": "string", "format": "email", "description": "Email address" },
+        "date": { "type": "string", "description": "Preferred date" },
+        "time": { "type": "string", "description": "Preferred time" },
+        "message": { "type": "string", "description": "Optional message" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["fullName", "phone", "email", "date", "time", "createdAt"]
+    },
+    "AnalyticsEvent": {
+      "title": "Analytics Event",
+      "description": "A page view or interaction event",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "description": "Type of event, e.g., page_view" },
+        "path": { "type": "string", "description": "Path visited" },
+        "device": { "type": "string", "description": "Device type (mobile, desktop, tablet)" },
+        "browser": { "type": "string", "description": "Browser name" },
+        "os": { "type": "string", "description": "Operating system" },
+        "country": { "type": "string", "description": "Country code" },
+        "city": { "type": "string", "description": "City name" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Event timestamp" }
+      },
+      "required": ["type", "path", "device", "browser", "os", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/appointments/{appointmentId}": {
+      "schema": { "$ref": "#/entities/Appointment" },
+      "description": "Stores all appointment bookings"
+    },
+    "/analytics/{eventId}": {
+      "schema": { "$ref": "#/entities/AnalyticsEvent" },
+      "description": "Stores analytics events"
+    }
+  }
+}

@@ -1,0 +1,90 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: appointments
+    // Document ID: auto-generated
+    // Fields:
+    //   - fullName: string (required, max 100)
+    //   - phone: string (required, max 20)
+    //   - email: string (required, valid email)
+    //   - date: string (required, max 20)
+    //   - time: string (required, max 20)
+    //   - message: string (optional, max 1000)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: analytics
+    // Document ID: auto-generated
+    // Fields:
+    //   - type: string (required, max 50)
+    //   - path: string (required, max 200)
+    //   - device: string (required, max 50)
+    //   - browser: string (required, max 50)
+    //   - os: string (required, max 50)
+    //   - country: string (optional, max 50)
+    //   - city: string (optional, max 100)
+    //   - createdAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (request.auth.token.email == "musa@admin.com" || request.auth.token.email == "musadeep0@gmail.com");
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidAppointment(data) {
+      let requiredFields = ['fullName', 'phone', 'email', 'date', 'time', 'createdAt'];
+      return hasRequiredFields(requiredFields) &&
+             data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 100 &&
+             data.phone is string && data.phone.size() > 0 && data.phone.size() <= 20 &&
+             isValidEmail(data.email) &&
+             data.date is string && data.date.size() > 0 && data.date.size() <= 20 &&
+             data.time is string && data.time.size() > 0 && data.time.size() <= 20 &&
+             (!('message' in data) || (data.message is string && data.message.size() <= 1000)) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidAnalyticsEvent(data) {
+      let requiredFields = ['type', 'path', 'device', 'browser', 'os', 'createdAt'];
+      return hasRequiredFields(requiredFields) &&
+             data.type is string && data.type.size() > 0 && data.type.size() <= 50 &&
+             data.path is string && data.path.size() > 0 && data.path.size() <= 200 &&
+             data.device is string && data.device.size() > 0 && data.device.size() <= 50 &&
+             data.browser is string && data.browser.size() > 0 && data.browser.size() <= 50 &&
+             data.os is string && data.os.size() > 0 && data.os.size() <= 50 &&
+             (!('country' in data) || (data.country is string && data.country.size() <= 50)) &&
+             (!('city' in data) || (data.city is string && data.city.size() <= 100)) &&
+             data.createdAt is timestamp;
+    }
+
+    match /appointments/{appointmentId} {
+      allow read: if isAdmin();
+      allow create: if isValidAppointment(request.resource.data);
+      allow update: if isAdmin() && isValidAppointment(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /analytics/{eventId} {
+      allow read: if isAdmin();
+      allow create: if isValidAnalyticsEvent(request.resource.data);
+      allow update: if isAdmin() && isValidAnalyticsEvent(request.resource.data);
+      allow delete: if isAdmin();
+    }
+  }
+}
